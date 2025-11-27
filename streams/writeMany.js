@@ -86,19 +86,12 @@
 const fs = require("node:fs/promises");
 
 (async () => {
-    // console.time("writeMany");
+    console.time("writeMany");
     const fileHandle = await fs.open("./test.txt", "w")
 
     const stream = fileHandle.createWriteStream();
 
     console.log(stream.writableHighWaterMark)
-
-
-    // const buff = Buffer.from("This is a content", "utf-8");
-
-    // stream.write(buff)
-    // console.log(buff)
-    // console.log(stream.writableLength)
 
     // 8 bits = 1 byte
     // 1000 bytes = 1 kilobyte
@@ -110,18 +103,33 @@ const fs = require("node:fs/promises");
     const writeMany = () => {
         while(i < 1000000){
         const buff = Buffer.from(` ${i} `, "utf-8");
-            if(!stream.write(buff)) break
+            
+            
+            //this is our last write
+            if(i === 999999){
+                return stream.end(buff)
+            }
+
+            //if strea.write returns false, stop the loop
+            if(!stream.write(buff)) break;
+
             i++;
         }
-}
+    }
 
     writeMany();
     
+    //resume our loop once our sream's internal buffer is emptied
     stream.on("drain", () => {
+        console.log("draining!!!")
         writeMany();
     })
 
-    // console.timeEnd("writeMany")
+    stream.on('finish', () => {
+        console.timeEnd("writeMany")
+        fileHandle.close();
+
+    })
     
 })();
 
